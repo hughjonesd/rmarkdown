@@ -4,8 +4,9 @@
 \alias{rtf_document}
 \title{Convert to an RTF document}
 \usage{
-rtf_document(toc = FALSE, toc_depth = 3, fig_width = 5, fig_height = 4,
-  keep_md = FALSE, md_extensions = NULL, pandoc_args = NULL)
+rtf_document(toc = FALSE, toc_depth = 3, fig_width = 5,
+  fig_height = 4, keep_md = FALSE, md_extensions = NULL,
+  pandoc_args = NULL)
 }
 \arguments{
 \item{toc}{\code{TRUE} to include a table of contents in the output}
@@ -31,7 +32,7 @@ R Markdown output format to pass to \code{\link{render}}
 Format for converting from R Markdown to an RTF document.
 }
 \details{
-See the \href{http://rmarkdown.rstudio.com/rtf_document_format.html}{online
+See the \href{https://rmarkdown.rstudio.com/rtf_document_format.html}{online
 documentation} for additional details on using the \code{rtf_document} format.
 
 R Markdown documents can have optional metadata that is used to generate a
@@ -40,7 +41,7 @@ see the documentation on R Markdown \link[=rmd_metadata]{metadata}.
 
 R Markdown documents also support citations. You can find more information on
 the markdown syntax for citations in the
-\href{http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
+\href{https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
 and Citations} article in the online documentation.
 }
 \examples{
@@ -54,5 +55,4 @@ render("input.Rmd", rtf_document())
 # specify table of contents option
 render("input.Rmd", rtf_document(toc = TRUE))
 }
-
 }

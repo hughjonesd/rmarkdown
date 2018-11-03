@@ -23,7 +23,7 @@ pandoc_toc_args(toc, toc_depth = 3)
 \arguments{
 \item{name}{Name of template variable to set.}
 
-\item{value}{Value of template variable.}
+\item{value}{Value of template variable (defaults to \code{true} if missing).}
 
 \item{in_header}{One or more files with content to be included in the
 header of the document.}
@@ -47,21 +47,20 @@ is specified.}
 \item{toc_depth}{Depth of headers to include in table of contents.}
 }
 \value{
-A character vector with pandoc command line arguments
+A character vector with pandoc command line arguments.
 }
 \description{
 Functions that assist in creating various types of pandoc command line
 arguments (e.g. for templates, table of contents, highlighting, and content
-includes)
+includes).
 }
 \details{
 Non-absolute paths for resources referenced from the
-  \code{in_header}, \code{before_body}, and \code{after_body}
-  parameters are resolved relative to the directory of the input document.
+\code{in_header}, \code{before_body}, and \code{after_body}
+parameters are resolved relative to the directory of the input document.
 }
 \examples{
 \dontrun{
-
 library(rmarkdown)
 
 pandoc_include_args(before_body = "header.htm")
@@ -72,6 +71,5 @@ pancoc_highlight_args("kate")
 pandoc_latex_engine_args("pdflatex")
 
 pandoc_toc_args(toc = TRUE, toc_depth = 2)
-
 }
 }

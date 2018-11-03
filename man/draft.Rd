@@ -4,7 +4,8 @@
 \alias{draft}
 \title{Create a new document based on a template}
 \usage{
-draft(file, template, package = NULL, create_dir = "default", edit = TRUE)
+draft(file, template, package = NULL, create_dir = "default",
+  edit = TRUE)
 }
 \arguments{
 \item{file}{File name for the draft}
@@ -22,7 +23,7 @@ template).}
 \item{edit}{\code{TRUE} to edit the template immediately}
 }
 \value{
-The file name of the new document (invisibly)
+The file name of the new document (invisibly).
 }
 \description{
 Create (and optionally edit) a draft of an R Markdown document based on a
@@ -30,9 +31,9 @@ template.
 }
 \details{
 The \code{draft} function creates new R Markdown documents based on
-  templates that are either located on the filesystem or within an R package.
-  The template and it's supporting files will be copied to the location
-  specified by \code{file}.
+templates that are either located on the filesystem or within an R package.
+The template and its supporting files will be copied to the location
+specified by \code{file}.
 }
 \note{
 An R Markdown template consists of a directory that contains a
@@ -67,7 +68,6 @@ An R Markdown template consists of a directory that contains a
 }
 \examples{
 \dontrun{
-
 rmarkdown::draft("Q4Report.Rmd",
                  template="/opt/rmd/templates/quarterly_report")
 

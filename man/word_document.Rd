@@ -4,10 +4,10 @@
 \alias{word_document}
 \title{Convert to an MS Word document}
 \usage{
-word_document(toc = FALSE, toc_depth = 3, fig_width = 5, fig_height = 4,
-  fig_caption = TRUE, df_print = "default", highlight = "default",
-  reference_docx = "default", keep_md = FALSE, md_extensions = NULL,
-  pandoc_args = NULL)
+word_document(toc = FALSE, toc_depth = 3, fig_width = 5,
+  fig_height = 4, fig_caption = TRUE, df_print = "default",
+  smart = TRUE, highlight = "default", reference_docx = "default",
+  keep_md = FALSE, md_extensions = NULL, pandoc_args = NULL)
 }
 \arguments{
 \item{toc}{\code{TRUE} to include a table of contents in the output}
@@ -30,6 +30,10 @@ for formats that produce HTML). In addition
 to the named methods you can also pass an arbitrary function to be used
 for printing data frames. You can disable the df_print behavior entirely
 by setting the option \code{rmarkdown.df_print} to \code{FALSE}.}
+
+\item{smart}{Produce typographically correct output, converting straight
+quotes to curly quotes, --- to em-dashes, -- to en-dashes, and ... to
+ellipses.}
 
 \item{highlight}{Syntax highlighting style. Supported styles include
 "default", "tango", "pygments", "kate", "monochrome", "espresso",
@@ -55,7 +59,7 @@ R Markdown output format to pass to \code{\link{render}}
 Format for converting from R Markdown to an MS Word document.
 }
 \details{
-See the \href{http://rmarkdown.rstudio.com/word_document_format.html}{online
+See the \href{https://rmarkdown.rstudio.com/word_document_format.html}{online
 documentation} for additional details on using the \code{word_document} format.
 
 R Markdown documents can have optional metadata that is used to generate a
@@ -64,12 +68,11 @@ see the documentation on R Markdown \link[=rmd_metadata]{metadata}.
 
 R Markdown documents also support citations. You can find more information on
 the markdown syntax for citations in the
-\href{http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
+\href{https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
 and Citations} article in the online documentation.
 }
 \examples{
 \dontrun{
-
 library(rmarkdown)
 
 # simple invocation
@@ -78,5 +81,4 @@ render("input.Rmd", word_document())
 # specify an option for syntax highlighting
 render("input.Rmd", word_document(highlight = "zenburn"))
 }
-
 }

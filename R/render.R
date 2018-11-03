@@ -10,6 +10,140 @@
 #' @export
 metadata <- list()
 
+#' Render R Markdown
+#'
+#' Render the input file to the specified output format using pandoc. If the
+#' input requires knitting then \code{\link[knitr:knit]{knit}} is called prior
+#' to pandoc.
+#'
+#' Note that the \pkg{knitr} \code{error} option is set to \code{FALSE} during
+#' rendering (which is different from the \pkg{knitr} default value of
+#' \code{TRUE}).
+#'
+#' For additional details on rendering R scripts see
+#' \link[=compile_notebook]{Compiling R scripts to a notebook}.
+#'
+#' If no \code{output_format} parameter is specified then the output format is
+#' read from the YAML front-matter of the input file. For example, the
+#' following YAML would yield a PDF document:
+#'
+#' \preformatted{
+#' output: pdf_document
+#' }
+#'
+#' Additional format options can also be specified in metadata. For example:
+#'
+#' \preformatted{
+#' output:
+#'   pdf_document:
+#'     toc: true
+#'     highlight: zenburn
+#' }
+#'
+#' Multiple formats can be specified in metadata. If no \code{output_format}
+#' is passed to \code{render} then the first one defined will be used:
+#'
+#' \preformatted{
+#' output:
+#'   pdf_document:
+#'     toc: true
+#'     highlight: zenburn
+#'   html_document:
+#'     toc: true
+#'     theme: united
+#' }
+#'
+#' Formats specified in metadata can be any one of the built in formats (e.g.
+#' \code{\link{html_document}}, \code{\link{pdf_document}}) or a format defined
+#' in another package (e.g. \code{pkg::custom_format}).
+#'
+#' If there is no format defined in the YAML then
+#' \code{\link{html_document}} will be used.
+#' @section R Markdown:
+#' R Markdown supports all of the base pandoc markdown features as well as some
+#' optional features for compatibility with GitHub Flavored Markdown (which
+#' previous versions of R Markdown were based on). See
+#' \code{\link{rmarkdown_format}} for details.
+#' @seealso
+#' \link[knitr:knit]{knit}, \link{output_format},
+#' \href{http://johnmacfarlane.net/pandoc}{pandoc}
+#' @param input The input file to be rendered. This can be an R script (.R),
+#' an R Markdown document (.Rmd), or a plain markdown document.
+#' @param output_format The R Markdown output format to convert to. The option
+#' \code{"all"} will render all formats defined within the file. The option can
+#' be the name of a format (e.g. \code{"html_document"}) and that will render
+#' the document to that single format. One can also use a vector of format
+#' names to render to multiple formats. Alternatively, you can pass an output
+#' format object (e.g. \code{html_document()}). If using \code{NULL} then the
+#' output format is the first one defined in the YAML frontmatter in the input
+#' file (this defaults to HTML if no format is specified there).
+#' @param output_file The name of the output file. If using \code{NULL} then the
+#' output filename will be based on filename for the input file. If a filename
+#' is provided, a path to the output file can also be provided. Note that the
+#' \code{output_dir} option allows for specifying the output file path as well,
+#' however, if also specifying the path, the directory must exist.
+#' @param output_dir The output directory for the rendered \code{output_file}.
+#' This allows for a choice of an alternate directory to which the output file
+#' should be written (the default output directory of that of the input file).
+#' If a path is provided with a filename in \code{output_file} the directory
+#' specified here will take precedence. Please note that any directory path
+#' provided will create any necessary directories if they do not exist.
+#' @param output_options List of output options that can override the options
+#' specified in metadata (e.g. could be used to force \code{self_contained} or
+#' \code{mathjax = "local"}). Note that this is only valid when the output
+#' format is read from metadata (i.e. not a custom format object passed to
+#' \code{output_format}).
+#' @param intermediates_dir Intermediate files directory. If a path is specified
+#' then intermediate files will be written to that path. If \code{NULL},
+#' intermediate files are written to the same directory as the input file.
+#' @param knit_root_dir The working directory in which to knit the document;
+#' uses knitr's \code{root.dir} knit option. If \code{NULL} then the behavior
+#' will follow the knitr default, which is to use the parent directory of the
+#' document.
+#' @param runtime The runtime target for rendering. The \code{static} option
+#' produces output intended for static files; \code{shiny} produces output
+#' suitable for use in a Shiny document (see \code{\link{run}}). The default,
+#' \code{auto}, allows the \code{runtime} target specified in the YAML metadata
+#' to take precedence, and renders for a \code{static} runtime target otherwise.
+#' @param clean Using \code{TRUE} will clean intermediate files that are created
+#' during rendering.
+#' @param params A list of named parameters that override custom params
+#' specified within the YAML front-matter (e.g. specifying a dataset to read or
+#' a date range to confine output to). Pass \code{"ask"} to start an
+#' application that helps guide parameter configuration.
+#' @param knit_meta (This option is reserved for expert use.) Metadata
+#' generated by \pkg{knitr}.
+#' @param envir The environment in which the code chunks are to be evaluated
+#' during knitting (can use \code{\link{new.env}()} to guarantee an empty new
+#' environment).
+#' @param run_pandoc An option for whether to run pandoc to convert Markdown
+#' output.
+#' @param quiet An option to suppress printing of the pandoc command line.
+#' @param encoding The encoding of the input file. See \code{\link{file}} for
+#' more information.
+#' @return
+#'   When \code{run_pandoc = TRUE}, the compiled document is written into
+#'   the output file, and the path of the output file is returned. When
+#'   \code{run_pandoc = FALSE}, the path of the Markdown output file, with
+#'   attributes \code{knit_meta} (the \pkg{knitr} meta data collected from code
+#'   chunks) and \code{intermediates} (the intermediate files/directories
+#'   generated by \code{render()}).
+#' @examples
+#' \dontrun{
+#' library(rmarkdown)
+#'
+#' # Render the default (first) format defined in the file
+#' render("input.Rmd")
+#'
+#' # Render all formats defined in the file
+#' render("input.Rmd", "all")
+#'
+#' # Render a single format
+#' render("input.Rmd", "html_document")
+#'
+#' # Render multiple formats
+#' render("input.Rmd", c("html_document", "pdf_document"))
+#' }
 #' @export
 render <- function(input,
                    output_format = NULL,
@@ -31,6 +165,15 @@ render <- function(input,
 
   init_render_context()
   on.exit(clear_render_context(), add = TRUE)
+
+  # render() may call itself, e.g., in discover_rmd_resources(); in this case,
+  # we should not clean up temp files in the nested render() call, but wait
+  # until the top-level render() exits to clean up temp files
+  .globals$level <- .globals$level + 1L  # increment level in a nested render()
+  on.exit({
+    .globals$level <- .globals$level - 1L
+    if (.globals$level == 0) clean_tmpfiles()
+  }, add = TRUE)
 
   # check for "all" output formats
   if (identical(output_format, "all")) {
@@ -190,6 +333,11 @@ render <- function(input,
   # read the yaml front matter
   yaml_front_matter <- parse_yaml_front_matter(input_lines)
 
+  # metadata to be attached to the returned value of render() as an attribute
+  old_output_metadata <- output_metadata$get()
+  on.exit(output_metadata$restore(old_output_metadata), add = TRUE)
+  output_metadata$restore(as.list(yaml_front_matter[['rmd_output_metadata']]))
+
   # if this is shiny_prerendered then modify the output format to
   # be single-page and to output dependencies to the shiny.dep file
   shiny_prerendered_dependencies <- list()
@@ -212,7 +360,10 @@ render <- function(input,
     # force various output options
     output_options$self_contained <- FALSE
     output_options$dependency_resolver <- function(deps) {
-      shiny_prerendered_dependencies <<- deps
+      shiny_prerendered_dependencies <<- list(
+        deps = deps,
+        packages = get_loaded_packages()
+      )
       list()
     }
   }
@@ -239,9 +390,15 @@ render <- function(input,
   }
   output_dir <- dirname(output_file)
 
+  # Stop the render process early if the output directory does not exist
+  if (!dir_exists(output_dir)) {
+    stop("The directory '", output_dir, "') does not not exist.",
+         call. = FALSE)
+  }
+
   # use output filename based files dir
-  files_dir <-file.path(output_dir, knitr_files_dir(basename(output_file)))
-  files_dir <- pandoc_path_arg(files_dir)
+  files_dir_slash <- file.path(output_dir, knitr_files_dir(basename(output_file)))
+  files_dir <- pandoc_path_arg(files_dir_slash)
 
   # default to no cache_dir (may be generated by the knit)
   cache_dir <- NULL
@@ -257,8 +414,13 @@ render <- function(input,
   }
 
   # reset knit_meta (and ensure it's always reset before exiting render)
-  knit_meta_reset()
-  on.exit(knit_meta_reset(), add = TRUE)
+  old_knit_meta <- knit_meta_reset()
+  on.exit({
+    knit_meta_reset()
+    if (length(old_knit_meta)) {
+      knitr::knit_meta_add(old_knit_meta, attr(old_knit_meta, 'knit_meta_id'))
+    }
+  }, add = TRUE)
 
   # presume that we're rendering as a static document unless specified
   # otherwise in the parameters
@@ -292,6 +454,13 @@ render <- function(input,
     c(output_format$pandoc$args, post_knit_extra_args)
   }
 
+  # determine our id-prefix (add one if necessary for runtime: shiny)
+  id_prefix <- id_prefix_from_args(output_format$pandoc$args)
+  if (!nzchar(id_prefix) && is_shiny(runtime)) {
+    id_prefix <- "section-"
+    output_format$pandoc$args <- c(output_format$pandoc$args, rbind("--id-prefix", id_prefix))
+  }
+
   # knit if necessary
   if (requires_knit) {
 
@@ -315,11 +484,15 @@ render <- function(input,
     # default rendering and chunk options
     knitr::render_markdown()
     knitr::opts_chunk$set(tidy = FALSE, error = FALSE)
+    # the retina option does not make sense to non-HTML output formats
+    if (!grepl('[.]html$', output_file)) knitr::opts_chunk$set(fig.retina = NULL)
 
     # store info about the final output format in opts_knit
     knitr::opts_knit$set(
       rmarkdown.pandoc.from = output_format$pandoc$from,
       rmarkdown.pandoc.to = pandoc_to,
+      rmarkdown.pandoc.args = output_format$pandoc$args,
+      rmarkdown.pandoc.id_prefix = id_prefix,
       rmarkdown.keep_md = output_format$keep_md,
       rmarkdown.df_print = output_format$df_print,
       rmarkdown.version = 2,
@@ -334,10 +507,14 @@ render <- function(input,
       knitr::opts_knit$set(root.dir = root_dir)
 
     # use filename based figure and cache directories
-    figures_dir <- paste(files_dir, "/figure-", pandoc_to, "/", sep = "")
-    knitr::opts_chunk$set(fig.path=figures_dir)
-    cache_dir <-knitr_cache_dir(input, pandoc_to)
-    knitr::opts_chunk$set(cache.path=cache_dir)
+    base_pandoc_to <- gsub('[-+].*', '', pandoc_to)
+    if (base_pandoc_to == 'html4') base_pandoc_to <- 'html'
+    knitr::opts_chunk$set(fig.path = paste0(
+      pandoc_path_arg(files_dir_slash, backslash = FALSE),
+      "/figure-", base_pandoc_to, "/"
+    ))
+    cache_dir <- knitr_cache_dir(input, base_pandoc_to)
+    knitr::opts_chunk$set(cache.path = cache_dir)
 
     # strip the trailing slash from cache_dir so that file.exists() and unlink()
     # check on it later works on windows
@@ -346,7 +523,7 @@ render <- function(input,
     # merge user options and hooks
     if (!is.null(output_format$knitr)) {
       knitr::opts_knit$set(as.list(output_format$knitr$opts_knit))
-      knitr::opts_chunk$set(as.list(output_format$knitr$opts_chunk))
+      knitr::opts_chunk$set(adjust_dev(as.list(output_format$knitr$opts_chunk)))
       knitr::opts_template$set(as.list(output_format$knitr$opts_template))
       knitr::knit_hooks$set(as.list(output_format$knitr$knit_hooks))
       knitr::opts_hooks$set(as.list(output_format$knitr$opts_hooks))
@@ -431,11 +608,13 @@ render <- function(input,
       assign("params", params, envir = envir)
       lockBinding("params", envir)
       on.exit({
-        do.call("unlockBinding", list("params", envir))
-        if (hasParams)
-          assign("params", envirParams, envir = envir)
-        else
-          remove("params", envir = envir)
+        if (exists("params", envir = envir, inherits = FALSE)) {
+            do.call("unlockBinding", list("params", envir))
+          if (hasParams)
+            assign("params", envirParams, envir = envir)
+          else
+            remove("params", envir = envir)
+        }
       }, add = TRUE)
     }
 
@@ -552,27 +731,19 @@ render <- function(input,
 
     need_bibtex <- grepl('[.](pdf|tex)$', output_file) &&
       any(c('--natbib', '--biblatex') %in% output_format$pandoc$args)
-    # if we are running citeproc then explicitly forward the bibliography
-    # on the command line (works around pandoc-citeproc issue whereby yaml
-    # strings that begin with numbers are interpreted as numbers)
-    if ((is.null(yaml_front_matter$citeproc) || yaml_front_matter$citeproc) && !is.null(bibliography <- yaml_front_matter$bibliography)) {
-      # remove the .bib extension since it does not work with MikTeX's BibTeX
-      if (need_bibtex && is_windows()) bibliography <- sub('[.]bib$', '', bibliography)
-      output_format$pandoc$args <- c(
-        output_format$pandoc$args,
-        rbind("--bibliography", pandoc_path_arg(bibliography, FALSE))
-      )
-    }
-
-    # add an id-prefix if this is runtime: shiny
-    if (is_shiny(runtime) && (!"--id-prefix" %in% output_format$pandoc$args)) {
-      output_format$pandoc$args <- c(output_format$pandoc$args,
-                                     rbind("--id-prefix", "section-"))
-    }
 
     perf_timer_start("pandoc")
 
     convert <- function(output, citeproc = FALSE) {
+
+      # temporarily move figures to the intermediate dir if specified:
+      # https://github.com/rstudio/rmarkdown/issues/500
+      figures_dir <- gsub('/$', '', knitr::opts_chunk$get("fig.path"))
+      if (!is.null(intermediates_dir) && dir_exists(figures_dir)) {
+        figures_dir_tmp <- intermediates_loc(figures_dir)
+        move_dir(figures_dir, figures_dir_tmp)
+        on.exit(move_dir(figures_dir_tmp, figures_dir), add = TRUE)
+      }
 
       # ensure we expand paths (for Windows where leading `~/` does
       # not get expanded by pandoc)
@@ -602,10 +773,7 @@ render <- function(input,
       pandoc_output_tmp <- basename(tempfile("pandoc", tmpdir = getwd(), fileext = ext))
 
       # clean up temporary file on exit
-      on.exit({
-        if (file.exists(pandoc_output_tmp))
-          unlink(pandoc_output_tmp)
-      }, add = TRUE)
+      on.exit(unlink(pandoc_output_tmp), add = TRUE)
 
       # call pandoc to render file
       status <- pandoc_convert(
@@ -634,24 +802,23 @@ render <- function(input,
       status
     }
     texfile <- file_with_ext(output_file, "tex")
-    # compile Rmd to tex when we need to generate bibliography with natbib/biblatex
-    if (need_bibtex) {
-      convert(texfile)
-      # manually compile tex if PDF output is expected
-      if (grepl('[.]pdf$', output_file)) {
-        latexmk(texfile, output_format$pandoc$latex_engine)
+    # determine whether we need to run citeproc (based on whether we have
+    # references in the input)
+    run_citeproc <- citeproc_required(yaml_front_matter, input_lines)
+    # if the output format is LaTeX, first convert .md to .tex, and then convert
+    # .tex to .pdf via latexmk() if PDF output is requested (in rmarkdown <=
+    # v1.8, we used to call Pandoc to convert .md to .tex and .pdf separately)
+    if (output_format$pandoc$keep_tex || knitr::is_latex_output()) {
+      # do not use pandoc-citeproc if needs to build bibliography
+      convert(texfile, run_citeproc && !need_bibtex)
+      # unless the output file has the extension .tex, we assume it is PDF
+      if (!grepl('[.]tex$', output_file)) {
+        latexmk(texfile, output_format$pandoc$latex_engine, '--biblatex' %in% output_format$pandoc$args)
         file.rename(file_with_ext(texfile, "pdf"), output_file)
+        # clean up the tex file if necessary
+        if (!output_format$pandoc$keep_tex) on.exit(unlink(texfile), add = TRUE)
       }
-      # clean up the tex file if necessary
-      if ((texfile != output_file) && !output_format$pandoc$keep_tex)
-        on.exit(unlink(texfile), add = TRUE)
     } else {
-      # determine whether we need to run citeproc (based on whether we
-      # have references in the input)
-      run_citeproc <- citeproc_required(yaml_front_matter, input_lines)
-      # generate .tex if we want to keep the tex source
-      if (output_format$pandoc$keep_tex) convert(texfile, run_citeproc)
-      # run the main conversion if the output file is not .tex
       convert(output_file, run_citeproc)
     }
 
@@ -688,16 +855,16 @@ render <- function(input,
 
   # write markdown output if requested
   if (output_format$keep_md && !md_input) {
-
-    md <- c(md_header_from_front_matter(yaml_front_matter),
-            partition_yaml_front_matter(input_text)$body)
-
-    writeLines(md, file_with_ext(output_file, "md"), useBytes = TRUE)
+    file.copy(input, file_with_ext(output_file, "md"), overwrite = TRUE)
   }
 
   if (run_pandoc) {
     # return the full path to the output file
-    invisible(tools::file_path_as_absolute(output_file))
+    output_file <- tools::file_path_as_absolute(output_file)
+    # attach the metadata specified as rmd_output_metadata in YAML
+    if (length(output_meta <- output_metadata$get()))
+      attr(output_file, 'rmd_output_metadata') <- output_meta
+    invisible(output_file)
   } else {
     # did not run pandoc; returns the markdown output with attributes of the
     # knitr meta data and intermediate files
@@ -708,16 +875,15 @@ render <- function(input,
 
 #' Render supporting files for an input document
 #'
-#' Render (copy) required supporting files for an input document to the _files
-#' directory associated with the document.
+#' Render (copy) required supporting files for an input document to the
+#' \code{_files} directory that is associated with the document.
 #'
-#' @param from Directory to copy from
-#' @param files_dir Directory to copy files into
-#' @param rename_to Optional rename of source directory after it is copied
-#'
+#' @param from The directory from which the files should be copied.
+#' @param files_dir The directory that will receive the copied files.
+#' @param rename_to An option to rename the source directory after the copy
+#' operation is complete.
 #' @return The relative path to the supporting files. This path is suitable
 #' for inclusion in HTML\code{href} and \code{src} attributes.
-#'
 #' @export
 render_supporting_files <- function(from, files_dir, rename_to = NULL) {
 
@@ -754,24 +920,6 @@ knit_meta_reset <- function(class = NULL) {
   knitr::knit_meta(class, clean = TRUE)
 }
 
-md_header_from_front_matter <- function(front_matter) {
-
-  md <- c()
-
-  if (!is.null(front_matter$title))
-    md <- c(md, paste("# ", front_matter$title, sep = ""))
-
-  if (is.character(front_matter$author)) {
-    authors <- paste(front_matter$author, "  ", sep = "")
-    md <- c(md, authors)
-  }
-
-  if (!is.null(front_matter$date))
-    md <- c(md, paste(front_matter$date, "  ", sep = ""))
-
-  md
-}
-
 # render context (render-related state can be stuffed here)
 .render_context <- NULL # initialized in .onLoad
 render_context <- function() {
@@ -798,6 +946,21 @@ merge_render_context <- function(context) {
     context[[el]] <- get(el, envir = render_context())
   context
 }
+
+
+id_prefix_from_args <- function(args) {
+
+  # scan for id-prefix argument
+  for (i in 1:length(args)) {
+    arg <- args[[i]]
+    if (identical(arg, "--id-prefix") && (i < length(args)))
+      return(args[[i + 1]])
+  }
+
+  # default to empty string
+  ""
+}
+
 
 resolve_df_print <- function(df_print) {
 
@@ -844,5 +1007,20 @@ resolve_df_print <- function(df_print) {
 # package level globals
 .globals <- new.env(parent = emptyenv())
 .globals$evaluated_global_chunks <- character()
+.globals$level <- 0L
 
 
+#' The output metadata object
+#'
+#' This object provides a mechanism for users to attach metadata as an attribute
+#' (named \code{rmd_output_metadata}) of the returned value of
+#' \code{\link{render}()}. The initial value of the metadata comes from in the
+#' \code{rmd_output_metadata} field of the YAML frontmatter of an R Markdown
+#' document. The metadata can be queried via the
+#' \code{output_metadata$get()} method, and modified via the
+#' \code{output_metadata$set()} method.
+#' @format NULL
+#' @usage NULL
+#' @keywords NULL
+#' @export
+output_metadata = knitr:::new_defaults()

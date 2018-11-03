@@ -1,18 +1,24 @@
 Package: rmarkdown
 Type: Package
 Title: Dynamic Documents for R
-Version: 1.5
+Version: 1.10.14
 Authors@R: c(
-  person("JJ", "Allaire", role = c("aut", "cre"), email = "jj@rstudio.com"),
-  person("Joe", "Cheng", role = "aut", email = "joe@rstudio.com"),
-  person("Yihui", "Xie", role = "aut", email = "yihui@rstudio.com"),
+  person("JJ", "Allaire", role = "aut", email = "jj@rstudio.com"),
+  person("Yihui", "Xie", role = c("aut", "cre"), email = "xie@yihui.name", comment = c(ORCID = "0000-0003-0645-5666")),
   person("Jonathan", "McPherson", role = "aut", email = "jonathan@rstudio.com"),
-  person("Winston", "Chang", role = "aut", email = "winston@rstudio.com"),
-  person("Jeff", "Allen", role = "aut", email = "jeff@rstudio.com"),
-  person("Hadley", "Wickham", role = "aut", email = "hadley@rstudio.com"),
+  person("Javier", "Luraschi", role = "aut", email = "javier@rstudio.com"),
+  person("Kevin", "Ushey", role = "aut", email = "kevin@rstudio.com"),
   person("Aron", "Atkins", role = "aut", email = "aron@rstudio.com"),
-  person("Rob", "Hyndman", role = "aut", email = "Rob.Hyndman@monash.edu"),
-  person("Ruben", "Arslan", role = "aut", email = "ruben.arslan@uni-goettingen.de"),
+  person("Hadley", "Wickham", role = "aut", email = "hadley@rstudio.com"),
+  person("Joe", "Cheng", role = "aut", email = "joe@rstudio.com"),
+  person("Winston", "Chang", role = "aut", email = "winston@rstudio.com"),
+  person("Richard", "Iannone", role = "aut", email = "rich@rstudio.com", comment = c(ORCID = "0000-0003-3925-190X")),
+  person("Jeff", "Allen", role = "ctb", email = "jeff@rstudio.com"),
+  person("Barret", "Schloerke", role = "ctb"),
+  person("Roy", "Storey", role = "ctb"),
+  person("Rob", "Hyndman", role = "ctb", email = "Rob.Hyndman@monash.edu"),
+  person("Ruben", "Arslan", role = "ctb", email = "ruben.arslan@uni-goettingen.de"),
+  person("Frederik", "Aust", role = "ctb", email = "frederik.aust@uni-koeln.de", comment = c(ORCID = "0000-0003-4900-788X")),
   person(family = "RStudio, Inc.", role = "cph"),
   person(family = "jQuery Foundation", role = "cph",
          comment = "jQuery library"),
@@ -36,8 +42,6 @@ Authors@R: c(
          comment = "highlight.js library"),
   person("Greg", "Franko", role = c("ctb", "cph"),
          comment = "tocify library"),
-  person("Eli", "Grey", role = c("ctb", "cph"),
-         comment = "FileSaver library"),
   person("John", "MacFarlane", role = c("ctb", "cph"),
          comment = "Pandoc templates"),
   person(family = "Google, Inc.", role = c("ctb", "cph"),
@@ -55,31 +59,37 @@ Authors@R: c(
   person("Aidan", "Lister", role = c("ctb", "cph"), 
          comment = "jQuery StickyTabs")
   )
-Author: JJ Allaire, Jonathan McPherson, Yihui Xie, Hadley Wickham, Joe Cheng,
-    Jeff Allen
-Maintainer: JJ Allaire <jj@rstudio.com>
+Maintainer: Yihui Xie <xie@yihui.name>
 Description: Convert R Markdown documents into a variety of formats.
 Depends:
     R (>= 3.0)
 Imports:
     tools,
     utils,
-    knitr (>= 1.14),
+    knitr (>= 1.18),
     yaml (>= 2.1.5),
+    htmldeps (>= 0.1.1),
     htmltools (>= 0.3.5),
-    caTools,
     evaluate (>= 0.8),
     base64enc,
     jsonlite,
-    rprojroot,
-    methods
+    mime,
+    tinytex (>= 0.3),
+    methods,
+    stringr (>= 1.2.0)
+Remotes:
+    rstudio/htmldeps 
 Suggests:
     shiny (>= 0.11),
     tufte,
     testthat,
     digest,
-    tibble
+    dygraphs,
+    tibble,
+    callr (>= 2.0.0)
 SystemRequirements: pandoc (>= 1.12.3) - http://pandoc.org
-URL: http://rmarkdown.rstudio.com
+URL: https://rmarkdown.rstudio.com, https://github.com/rstudio/rmarkdown
+BugReports: https://github.com/rstudio/rmarkdown/issues
 License: GPL-3
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
+Encoding: UTF-8

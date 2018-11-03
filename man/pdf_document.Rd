@@ -2,15 +2,21 @@
 % Please edit documentation in R/pdf_document.R
 \name{pdf_document}
 \alias{pdf_document}
-\title{Convert to a PDF document}
+\alias{latex_document}
+\alias{latex_fragment}
+\title{Convert to a PDF/LaTeX document}
 \usage{
 pdf_document(toc = FALSE, toc_depth = 2, number_sections = FALSE,
   fig_width = 6.5, fig_height = 4.5, fig_crop = TRUE,
   fig_caption = TRUE, dev = "pdf", df_print = "default",
   highlight = "default", template = "default", keep_tex = FALSE,
   latex_engine = "pdflatex", citation_package = c("none", "natbib",
-  "biblatex"), includes = NULL, md_extensions = NULL, pandoc_args = NULL,
-  extra_dependencies = NULL)
+  "biblatex"), includes = NULL, md_extensions = NULL,
+  pandoc_args = NULL, extra_dependencies = NULL)
+
+latex_document(...)
+
+latex_fragment(...)
 }
 \arguments{
 \item{toc}{\code{TRUE} to include a table of contents in the output}
@@ -75,15 +81,17 @@ list of LaTeX dependencies, a character vector of LaTeX package names (e.g.
 with the names being package names (e.g. \code{list(hypreref =
 c("unicode=true", "breaklinks=true"), lmodern = NULL)}). It can be used to
 add custom LaTeX packages to the .tex header.}
+
+\item{...}{Arguments passed to \code{pdf_document()}.}
 }
 \value{
 R Markdown output format to pass to \code{\link{render}}
 }
 \description{
-Format for converting from R Markdown to a PDF document.
+Formats for converting from R Markdown to a PDF or LaTeX document.
 }
 \details{
-See the \href{http://rmarkdown.rstudio.com/pdf_document_format.html}{online
+See the \href{https://rmarkdown.rstudio.com/pdf_document_format.html}{online
 documentation} for additional details on using the \code{pdf_document} format.
 
 Creating PDF output from R Markdown requires that LaTeX be installed.
@@ -94,7 +102,7 @@ see the documentation on R Markdown \link[=rmd_metadata]{metadata}.
 
 R Markdown documents also support citations. You can find more information on
 the markdown syntax for citations in the
-\href{http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
+\href{https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
 and Citations} article in the online documentation.
 
 Many aspects of the LaTeX template used to create PDF documents can be
@@ -123,7 +131,6 @@ Available metadata variables include:
 }
 \examples{
 \dontrun{
-
 library(rmarkdown)
 
 # simple invocation
@@ -135,5 +142,4 @@ render("input.Rmd", pdf_document(latex_engine = "lualatex"))
 # add a table of contents and pass an option to pandoc
 render("input.Rmd", pdf_document(toc = TRUE, "--listings"))
 }
-
 }

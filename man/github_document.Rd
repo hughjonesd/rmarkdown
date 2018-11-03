@@ -5,9 +5,9 @@
 \title{Convert to GitHub Flavored Markdown}
 \usage{
 github_document(toc = FALSE, toc_depth = 3, fig_width = 7,
-  fig_height = 5, dev = "png", df_print = "default", includes = NULL,
-  md_extensions = NULL, hard_line_breaks = TRUE, pandoc_args = NULL,
-  html_preview = TRUE)
+  fig_height = 5, dev = "png", df_print = "default",
+  includes = NULL, md_extensions = NULL, hard_line_breaks = TRUE,
+  pandoc_args = NULL, html_preview = TRUE)
 }
 \arguments{
 \item{toc}{\code{TRUE} to include a table of contents in the output}
@@ -38,7 +38,7 @@ document (typically created using the \code{\link{includes}} function).}
 default definition or R Markdown. See the \code{\link{rmarkdown_format}} for
 additional details.}
 
-\item{hard_line_breaks}{\code{TRUE} to genreate markdown that uses a simple
+\item{hard_line_breaks}{\code{TRUE} to generate markdown that uses a simple
 newline to represent a line break (as opposed to two-spaces and a newline).}
 
 \item{pandoc_args}{Additional command line options to pass to pandoc}
@@ -51,4 +51,9 @@ R Markdown output format to pass to \code{\link{render}}
 }
 \description{
 Format for converting from R Markdown to GitHub Flavored Markdown.
+}
+\details{
+See the \href{https://rmarkdown.rstudio.com/github_document_format.html}{online
+documentation} for additional details on using the \code{github_document}
+format.
 }

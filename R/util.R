@@ -1,5 +1,7 @@
+#' @import stats
+
 createUniqueId <- function(bytes) {
-  paste(as.hexmode(sample(256, bytes)-1), collapse="")
+  paste(as.hexmode(sample(256, bytes) - 1), collapse = "")
 }
 
 is_windows <- function() {
@@ -10,6 +12,10 @@ is_osx <- function() {
   Sys.info()["sysname"] == "Darwin"
 }
 
+`%||%` <- function(x, y) {
+  if (is.null(x)) y else x
+}
+
 # determine the output file for a pandoc conversion
 pandoc_output_file <- function(input, pandoc_options) {
   to <- pandoc_options$to
@@ -17,7 +23,7 @@ pandoc_output_file <- function(input, pandoc_options) {
     ext <- pandoc_options$ext
   else if (to %in% c("latex", "beamer"))
     ext <- ".pdf"
-  else if (to %in% c("html", "html5", "s5", "slidy",
+  else if (to %in% c("html", "html4", "html5", "s5", "slidy",
                      "slideous", "dzslides", "revealjs"))
     ext <- ".html"
   else if (grepl("^markdown", to)) {
@@ -120,15 +126,26 @@ file_name_without_shell_chars <- function(file) {
     name
 }
 
+tmpfile_pattern <- "rmarkdown-str"
+
 # return a string as a tempfile
 as_tmpfile <- function(str) {
   if (length(str) > 0) {
-    str_tmpfile <- tempfile("rmarkdown-str", fileext = ".html")
+    str_tmpfile <- tempfile(tmpfile_pattern, fileext = ".html")
     writeLines(str, str_tmpfile, useBytes =  TRUE)
     str_tmpfile
   } else {
     NULL
   }
+}
+
+# temp files created by as_tmpfile() cannot be immediately removed because they
+# are needed later by the pandoc conversion; we have to clean up the temp files
+# that have the pattern specified in `tmpfile_pattern` when render() exits
+clean_tmpfiles <- function() {
+  unlink(list.files(
+    tempdir(), sprintf("^%s[0-9a-f]+[.]html$", tmpfile_pattern), full.names = TRUE
+  ))
 }
 
 dir_exists <- function(x) {
@@ -188,7 +205,7 @@ highlighters <- function() {
     "haddock")
 }
 
-merge_lists <- function (base_list, overlay_list, recursive = TRUE) {
+merge_lists <- function(base_list, overlay_list, recursive = TRUE) {
   if (length(base_list) == 0)
     overlay_list
   else if (length(overlay_list) == 0)
@@ -210,8 +227,7 @@ merge_lists <- function (base_list, overlay_list, recursive = TRUE) {
   }
 }
 
-strip_white <- function (x)
-{
+strip_white <- function(x) {
   if (!length(x))
     return(x)
   while (is_blank(x[1])) {
@@ -227,14 +243,13 @@ strip_white <- function (x)
   x
 }
 
-is_blank <- function (x)
-{
+is_blank <- function(x) {
   if (length(x))
     all(grepl("^\\s*$", x))
   else TRUE
 }
 
-trim_trailing_ws <- function (x) {
+trim_trailing_ws <- function(x) {
   sub("\\s+$", "", x)
 }
 
@@ -250,6 +265,11 @@ base_dir <- function(x) {
   }
 
   base
+}
+
+move_dir <- function(from, to) {
+  dir.create(dirname(to), showWarnings = FALSE)
+  file.rename(from, to)
 }
 
 # Check if two paths are the same after being normalized
@@ -273,7 +293,7 @@ find_program <- function(program) {
       # and escapes in the path itself
       sanitized_path <- gsub("\\", "\\\\", Sys.getenv("PATH"), fixed = TRUE)
       sanitized_path <- gsub("\"", "\\\"", sanitized_path, fixed = TRUE)
-      system(paste("PATH=\"", sanitized_path, "\" /usr/bin/which ", program, sep=""),
+      system(paste0("PATH=\"", sanitized_path, "\" /usr/bin/which ", program),
              intern = TRUE)
     })
     if (length(res) == 0)
@@ -294,136 +314,8 @@ escape_regex_metas <- function(in_str) {
   gsub("([.\\|()[{^$+?])", "\\\\\\1", in_str)
 }
 
-# call latexmk to compile tex to PDF; if not available, use a simple emulation
-latexmk <- function(file, engine) {
-  if (!grepl('[.]tex$', file))
-    stop("The input file '", file, "' does not appear to be a LaTeX document")
-  engine <- find_latex_engine(engine)
-  latexmk_path <- find_program('latexmk')
-  if (latexmk_path == '') {
-    # latexmk not found
-    latexmk_emu(file, engine)
-  } else if (find_program('perl') != '' && latexmk_installed(latexmk_path)) {
-    system2_quiet(latexmk_path, c(
-      '-pdf -latexoption=-halt-on-error -interaction=batchmode',
-      paste0('-pdflatex=', shQuote(engine)), shQuote(file)
-    ), error = {
-      check_latexmk_version(latexmk_path)
-      show_latex_error(file)
-    })
-    system2(latexmk_path, '-c', stdout = FALSE)  # clean up nonessential files
-  } else {
-    latexmk_emu(file, engine)
-  }
-}
-
-# a quick and dirty version of latexmk (should work reasonably well unless the
-# LaTeX document is extremely complicated)
-latexmk_emu <- function(file, engine) {
-  owd <- setwd(dirname(file))
-  on.exit(setwd(owd), add = TRUE)
-  # only use basename because bibtex may not work with full path
-  file <- basename(file)
-
-  file_with_same_base <- function(file) {
-    files <- list.files()
-    files <- files[utils::file_test('-f', files)]
-    base <- tools::file_path_sans_ext(file)
-    normalizePath(files[tools::file_path_sans_ext(files) == base])
-  }
-  # clean up aux files from LaTeX compilation
-  files1 <- file_with_same_base(file)
-  keep_log <- FALSE
-  on.exit(add = TRUE, {
-    files2 <- file_with_same_base(file)
-    files3 <- setdiff(files2, files1)
-    aux <- c(
-      'aux', 'log', 'bbl', 'blg', 'fls', 'out', 'lof', 'lot', 'idx', 'toc',
-      'nav', 'snm', 'vrb', 'ilg', 'ind'
-    )
-    if (keep_log) aux <- setdiff(aux, 'log')
-    unlink(files3[tools::file_ext(files3) %in% aux])
-  })
-
-  fileq <- shQuote(file)
-  run_engine <- function() {
-    res <- system2(
-      engine, c('-halt-on-error -interaction=batchmode', fileq), stdout = FALSE
-    )
-    if (res != 0) {
-      keep_log <<- TRUE
-      show_latex_error(file)
-    }
-    invisible(res)
-  }
-  run_engine()
-  # generate index
-  idx <- sub('[.]tex$', '.idx', file)
-  if (file.exists(idx)) {
-    system2_quiet(find_latex_engine('makeindex'), shQuote(idx))
-  }
-  # generate bibliography
-  aux <- sub('[.]tex$', '.aux', file)
-  if (file.exists(aux)) {
-    system2_quiet(find_latex_engine('bibtex'), shQuote(aux))
-  }
-  run_engine()
-  run_engine()
-}
-
-system2_quiet <- function(..., error = NULL) {
-  # run the command quietly
-  res <- system2(..., stdout = FALSE, stderr = FALSE)
-  # if failed, run the error callback
-  if (res != 0) error  # lazy evaluation
-  invisible(res)
-}
-
-# parse the LaTeX log and show error messages
-show_latex_error <- function(file) {
-  logfile <- file_with_ext(file, 'log')
-  e <- c('Failed to compile ', file, '.')
-  if (!file.exists(logfile)) stop(e, call. = FALSE)
-  x <- readLines(logfile, warn = FALSE)
-  b <- grep('^\\s*$', x)  # blank lines
-  m <- NULL
-  for (i in grep('^! ', x)) {
-    # ignore the last error message about the fatal error
-    if (grepl('==> Fatal error occurred', x[i], fixed = TRUE)) next
-    n <- b[b > i]
-    n <- if (length(n) == 0) i else min(n) - 1L
-    m <- c(m, x[i:n], '')
-  }
-  if (length(m)) {
-    message(paste(m, collapse = '\n'))
-    stop(e, ' See ', logfile, ' for more info.', call. = FALSE)
-  }
-}
-
-# check if latexmk was correctly installed; see more info at
-# https://github.com/rstudio/bookdown/issues/121
-latexmk_installed <- function(latexmk_path) {
-  if (system2_quiet(latexmk_path, '-v') == 0) return(TRUE)
-  warning('The LaTeX package latexmk was not correctly installed.', call. = FALSE)
-  if (!is_windows()) return(FALSE)
-  shell('latexmk -v')  # hopefully MiKTeX can fix it automatically
-  system2_quiet(latexmk_path, '-v') == 0
-}
-
-# check the version of latexmk
-check_latexmk_version <- function(latexmk_path = find_program('latexmk')) {
-  out <- system2(latexmk_path, '-v', stdout = TRUE)
-  reg <- '^.*Version (\\d+[.]\\d+).*$'
-  out <- grep(reg, out, value = TRUE)
-  if (length(out) == 0) return()
-  ver <- as.numeric_version(gsub(reg, '\\1', out[1]))
-  if (ver >= '4.43') return()
-  system2(latexmk_path, '-v')
-  warning(
-    'Your latexmk version seems to be too low. ',
-    'You may need to update the latexmk package or your LaTeX distribution.',
-    call. = FALSE
-  )
+latexmk <- function(file, engine, biblatex = FALSE) {
+  tinytex::latexmk(file, engine, if (biblatex) 'biber' else 'bibtex')
 }
 
 n_bytes <- function(string) {
@@ -592,3 +484,56 @@ shell_exec <- function(cmd, intern = FALSE, wait = TRUE, ...) {
     system(cmd, intern = intern, wait = wait, ...)
 }
 
+# Adjust the graphical device in chunk options: if the device from the output
+# format is png but knitr's global chunk option is not png, respect knitr's
+# option, because (1) users may knitr::opts_chunk$set(dev) (which usually means
+# they know what they are doing) before rmarkdown::render(), and we probably
+# should not override the user's choice; (2) the png device does not work on
+# certain platforms (e.g. headless servers without X11), in which case knitr
+# will set the device to svg instead of png by default in knitr:::set_html_dev,
+# and rmarkdown should also respect this setting, otherwise we will run into
+# issues like https://github.com/rstudio/rmarkdown/issues/1100
+adjust_dev <- function(opts) {
+  dev <- knitr::opts_chunk$get('dev')
+  if (identical(opts$dev, 'png') && length(dev) == 1 && dev != 'png') {
+    opts$dev <- dev
+  }
+  opts
+}
+
+xfun_session_info <- function() {
+  paste('Pandoc version:', pandoc_version())
+}
+
+# given a path of a file in a potential R package, figure out the package root
+package_root <- function(path) {
+  dir <- dirname(path)
+  if (same_path(dir, file.path(dir, '..'))) return()
+  if (!file.exists(desc <- file.path(dir, 'DESCRIPTION')) ||
+      length(grep('^Package: ', readLines(desc))) == 0) return(package_root(dir))
+  dir
+}
+
+
+# retrieve package version without fear of error
+# loading namespace is ok as these packages have been or will be used
+get_package_version_string <- function(package) {
+  tryCatch(
+    as.character(getNamespaceVersion(package)),
+    error = function(e) {
+      NULL
+    }
+  )
+}
+# find all loaded packages.
+# May contain extra packages, but will contain all packages used while knitting
+get_loaded_packages <- function() {
+  packages <- sort(loadedNamespaces())
+  version <- vapply(packages, get_package_version_string, character(1))
+
+  data.frame(
+    packages = packages,
+    version = version,
+    row.names = NULL, stringsAsFactors = FALSE
+  )
+}

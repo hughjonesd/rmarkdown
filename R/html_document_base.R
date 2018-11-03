@@ -34,7 +34,7 @@ html_document_base <- function(smart = TRUE,
   args <- c()
 
   # smart quotes, etc.
-  if (smart)
+  if (smart && !pandoc2.0())
     args <- c(args, "--smart")
 
   # no email obfuscation
@@ -60,8 +60,8 @@ html_document_base <- function(smart = TRUE,
   post_knit <- function(metadata, input_file, runtime, ...) {}
 
   # pre_processor
-  pre_processor <- function (metadata, input_file, runtime, knit_meta,
-                             files_dir, output_dir) {
+  pre_processor <- function(metadata, input_file, runtime, knit_meta,
+                            files_dir, output_dir) {
 
     args <- c()
 
@@ -77,7 +77,7 @@ html_document_base <- function(smart = TRUE,
       theme <- match.arg(theme, themes())
       if (identical(theme, "default"))
         theme <- "bootstrap"
-      args <- c(args, "--variable", paste("theme:", theme, sep=""))
+      args <- c(args, "--variable", paste0("theme:", theme))
     }
 
     # resolve and inject extras, including dependencies specified by the format
@@ -108,6 +108,10 @@ html_document_base <- function(smart = TRUE,
 
     preserved_chunks <<- extract_preserve_chunks(input_file)
 
+    # Avoid pagetitle warning from pandoc2.0 when title is missing
+    if (pandoc2.0() && is.null(metadata$title) && is.null(metadata$pagetitle))
+      args <- c(args, "--metadata", paste0("pagetitle=", input_file))
+
     args
   }
 
@@ -132,10 +136,13 @@ html_document_base <- function(smart = TRUE,
     if (length(preserved_chunks) > 0) {
       # Pandoc adds an empty <p></p> around the IDs of preserved chunks, and we
       # need to remove these empty tags, otherwise we may have invalid HTML like
-      # <p><div>...</div></p>
+      # <p><div>...</div></p>. For the reason of the second gsub(), see
+      # https://github.com/rstudio/rmarkdown/issues/133.
       for (i in names(preserved_chunks)) {
         output_str <- gsub(paste0("<p>", i, "</p>"), i, output_str,
                            fixed = TRUE, useBytes = TRUE)
+        output_str <- gsub(paste0(' id="[^"]*?', i, '[^"]*?" '), ' ', output_str,
+                           useBytes = TRUE)
       }
       output_str <- restorePreserveChunks(output_str, preserved_chunks)
     }
@@ -144,13 +151,15 @@ html_document_base <- function(smart = TRUE,
       # The copy_resources flag copies all the resources referenced in the
       # document to its supporting files directory, and rewrites the document to
       # use the copies from that directory.
-      output_str <- copy_html_resources(paste(output_str, collapse="\n"),
+      output_str <- copy_html_resources(paste(output_str, collapse = "\n"),
                                               lib_dir, output_dir)
     } else if (!self_contained) {
       # if we're not self-contained, find absolute references to the output
       # directory and replace them with relative ones
       image_relative <- function(img_src, src) {
         in_file <- utils::URLdecode(src)
+        # do not process paths that are already relative
+        if (grepl('^[.][.]', in_file)) return(img_src)
         if (length(in_file) && file.exists(in_file)) {
           img_src <- sub(
             src, utils::URLencode(normalized_relative_to(output_dir, in_file)),

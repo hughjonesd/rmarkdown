@@ -2,6 +2,37 @@
 #'
 #' Start a Shiny server for the given document, and render it for display.
 #'
+#' The \code{run} function runs a Shiny document by starting a Shiny
+#' server associated with the document. The \code{shiny_args} parameter can be
+#' used to configure the server; see the \code{\link[shiny:runApp]{runApp}}
+#' documentation for details.
+#'
+#' Once the server is started, the document will be rendered using
+#' \code{\link{render}}. The server will initiate a render of the document
+#' whenever necessary, so it is not necessary to call \code{run} every time
+#' the document changes: if \code{auto_reload} is \code{TRUE}, saving the
+#' document will trigger a render. You can also manually trigger a render by
+#' reloading the document in a Web browser.
+#'
+#' The server will render any R Markdown (\code{.Rmd}) document in \code{dir};
+#' the \code{file} argument specifies only the initial document to be
+#' rendered and viewed. You can therefore link to other documents in the
+#' directory using standard Markdown syntax, e.g.
+#' \code{[Analysis Page 2](page2.Rmd)}.
+#'
+#' If \code{default_file} is not specified, nor is a file specified on the
+#' URL, then the default document to serve at \code{/} is chosen from (in
+#' order of preference):
+#' \itemize{
+#'   \item{If \code{dir} contains only one \code{Rmd}, that \code{Rmd}.}
+#'   \item{The file \file{index.Rmd}, if it exists in \code{dir}.}
+#'   \item{The first \code{Rmd} that has \code{runtime: shiny} in its YAML metadata.}
+#'   \item{The file \file{index.html} (or \file{index.htm}), if it exists in \code{dir}.}
+#' }
+#'
+#' If you wish to share R code between your documents, place it in a file
+#' named \code{global.R} in \code{dir}; it will be sourced into the global
+#' environment.
 #' @param file Path to the R Markdown document to launch in a web browser.
 #'   Defaults to \code{index.Rmd} in the current working directory, but may be
 #'   \code{NULL} to skip launching a browser.
@@ -13,40 +44,7 @@
 #'   Shiny application when the file currently being viewed is changed on disk.
 #' @param shiny_args Additional arguments to \code{\link[shiny:runApp]{runApp}}.
 #' @param render_args Additional arguments to \code{\link{render}}.
-#'
 #' @return Invisible NULL.
-#'
-#' @details The \code{run} function runs a Shiny document by starting a Shiny
-#'   server associated with the document. The \code{shiny_args} parameter can be
-#'   used to configure the server; see the \code{\link[shiny:runApp]{runApp}}
-#'   documentation for details.
-#'
-#'   Once the server is started, the document will be rendered using
-#'   \code{\link{render}}. The server will initiate a render of the document
-#'   whenever necessary, so it is not necessary to call \code{run} every time
-#'   the document changes: if \code{auto_reload} is \code{TRUE}, saving the
-#'   document will trigger a render. You can also manually trigger a render by
-#'   reloading the document in a Web browser.
-#'
-#'   The server will render any R Markdown (\code{.Rmd}) document in \code{dir};
-#'   the \code{file} argument specifies only the initial document to be
-#'   rendered and viewed. You can therefore link to other documents in the
-#'   directory using standard Markdown syntax, e.g.
-#'   \code{[Analysis Page 2](page2.Rmd)}.
-#'
-#'   If \code{default_file} is not specified, nor is a file specified on the
-#'   URL, then the default document to serve at \code{/} is chosen from (in
-#'   order of preference):
-#'   \itemize{
-#'     \item{If \code{dir} contains only one \code{Rmd}, that \code{Rmd}.}
-#'     \item{The file \code{index.Rmd}, if it exists in \code{dir}}
-#'     \item{The file \code{index.html}, if it exists in \code{dir}}
-#'   }
-#'
-#'   If you wish to share R code between your documents, place it in a file
-#'   named \code{global.R} in \code{dir}; it will be sourced into the global
-#'   environment.
-#'
 #' @note Unlike \code{\link{render}}, \code{run} does not render the document to
 #'   a file on disk. In most cases a Web browser will be started automatically
 #'   to view the document; see \code{launch.browser} in the
@@ -56,16 +54,13 @@
 #'   R Markdown file to view in the URL (e.g.
 #'   \code{http://127.0.0.1:1234/foo.Rmd}). A URL without a filename will show
 #'   the \code{default_file} as described above.
-#'
 #' @examples
 #' \dontrun{
-#'
 #' # Run the Shiny document "index.Rmd" in the current directory
 #' rmarkdown::run()
 #'
 #' # Run the Shiny document "shiny_doc.Rmd" on port 8241
 #' rmarkdown::run("shiny_doc.Rmd", shiny_args = list(port = 8241))
-#'
 #' }
 #' @export
 run <- function(file = "index.Rmd", dir = dirname(file), default_file = NULL,
@@ -84,14 +79,11 @@ run <- function(file = "index.Rmd", dir = dirname(file), default_file = NULL,
       index <- which(tolower(allRmds) == "index.rmd")
       if (length(index) > 0) {
         default_file <- allRmds[index[1]]
-      }
-      # look for first one that has runtime: shiny
-      else {
+      } else {
+        # look for first one that has runtime: shiny
         for (rmd in allRmds) {
-          encoding <- getOption("encoding")
-          if (!is.null(render_args) && !is.null(render_args$encoding))
-            encoding <- render_args$encoding
-          runtime <- yaml_front_matter(file.path(dir,rmd), encoding)$runtime
+          encoding <- render_args$encoding %||% getOption("encoding")
+          runtime <- yaml_front_matter(file.path(dir, rmd), encoding)$runtime
           if (is_shiny(runtime)) {
             default_file <- rmd
             break
@@ -103,17 +95,13 @@ run <- function(file = "index.Rmd", dir = dirname(file), default_file = NULL,
 
   if (is.null(default_file)) {
     # no R Markdown default found; how about an HTML?
-    indexHtml <- list.files(path = dir, pattern = "index.html?",
-                            ignore.case = TRUE)
-    if (length(indexHtml) > 0) {
-      default_file <- indexHtml[1]
-    }
+    indexHtml <- list.files(dir, "index.html?", ignore.case = TRUE)
+    if (length(indexHtml) > 0) default_file <- indexHtml[1]
   }
 
   # form and test locations
   dir <- normalize_path(dir)
-  if (!dir_exists(dir))
-    stop("The directory '", dir, "' does not exist")
+  if (!dir_exists(dir)) stop("The directory '", dir, "' does not exist")
 
   if (!is.null(file)) {
     # compute file path relative to directory (remove common directory prefix
@@ -132,28 +120,20 @@ run <- function(file = "index.Rmd", dir = dirname(file), default_file = NULL,
   }
 
   # pick up encoding
-  encoding <-
-    if (is.null(render_args$encoding))
-      "UTF-8"
-    else
-      render_args$encoding
+  encoding <- render_args$encoding %||% "UTF-8"
+
+  if (is.null(render_args$envir)) render_args$envir <- parent.frame()
 
   # determine the runtime of the target file
-  target_file <- ifelse(!is.null(file), file, default_file)
-  if (!is.null(target_file))
-    runtime <- yaml_front_matter(target_file, encoding)$runtime
-  else
-    runtime <- NULL
+  target_file <- file %||% default_file
+  runtime <- if (!is.null(target_file)) yaml_front_matter(target_file, encoding)$runtime
 
   # run using the requested mode
   if (is_shiny_prerendered(runtime)) {
 
     # get the pre-rendered shiny app
-    app <- shiny_prerendered_app(target_file,
-                                 encoding = encoding,
-                                 render_args = render_args)
-  }
-  else {
+    app <- shiny_prerendered_app(target_file, encoding = encoding, render_args = render_args)
+  } else {
 
     # add rmd_resources handler on start
     onStart <- function() {
@@ -181,10 +161,7 @@ run <- function(file = "index.Rmd", dir = dirname(file), default_file = NULL,
 
   # launch the app and open a browser to the requested page, if one was
   # specified
-  if (!is.null(shiny_args) && !is.null(shiny_args$launch.browser))
-    launch_browser <- shiny_args$launch.browser
-  else
-    launch_browser <- (!is.null(file)) && interactive()
+  launch_browser <- shiny_args$launch.browser %||% (!is.null(file) && interactive())
   if (isTRUE(launch_browser)) {
     launch_browser <- function(url) {
       url <- paste(url, file_rel, sep = "/")
@@ -197,8 +174,7 @@ run <- function(file = "index.Rmd", dir = dirname(file), default_file = NULL,
     }
   }
 
-  shiny_args <- merge_lists(list(appDir = app,
-                                 launch.browser = launch_browser),
+  shiny_args <- merge_lists(list(appDir = app, launch.browser = launch_browser),
                             shiny_args)
   do.call(shiny::runApp, shiny_args)
   invisible(NULL)
@@ -221,7 +197,13 @@ rmarkdown_shiny_server <- function(dir, file, encoding, auto_reload, render_args
     reactive_file <- if (auto_reload)
       shiny::reactiveFileReader(500, session, file, identity)
     else
-      function () { file }
+      function() { file }
+
+    envir_global <- render_args[['envir']]
+    envir_server <- list2env(list(
+      input = input, output = output, session = session
+    ), parent = envir_global)
+    render_args$envir <- new.env(parent = envir_server)
 
     # when the file loads (or is changed), render to a temporary file, and
     # read the contents into a reactive value
@@ -236,7 +218,7 @@ rmarkdown_shiny_server <- function(dir, file, encoding, auto_reload, render_args
           shiny::addResourcePath(basename(out$resource_folder),
                                  out$resource_folder)
         }
-        return (out$shiny_html)
+        return(out$shiny_html)
       }
 
       # ensure destination directory exists
@@ -273,8 +255,7 @@ rmarkdown_shiny_server <- function(dir, file, encoding, auto_reload, render_args
                                output_dir = dirname(output_dest),
                                output_options = output_opts,
                                intermediates_dir = dirname(output_dest),
-                               runtime = "shiny",
-                               envir = new.env()),
+                               runtime = "shiny"),
                           render_args)
       result_path <- shiny::maskReactiveContext(do.call(render, args))
 
@@ -304,9 +285,28 @@ rmarkdown_shiny_server <- function(dir, file, encoding, auto_reload, render_args
       }
       shinyHTML_with_deps(result_path, dependencies)
     })
-    output$`__reactivedoc__` <- shiny::renderUI({
+
+    doc_ui <- shiny::renderUI({
       doc()
     })
+
+    # For test snapshots. (The snapshotPreprocessOutput function was added
+    # in shiny 1.0.4.)
+    if (exists("snapshotPreprocessOutput", asNamespace("shiny"))) {
+      doc_ui <- shiny::snapshotPreprocessOutput(
+        doc_ui,
+        function(value) {
+          # Since the html data can be very large, just record a hash of it.
+          value$html <- sprintf("[html data sha1: %s]",
+            digest::digest(value$html, algo = "sha1", serialize = FALSE)
+          )
+
+          value
+        }
+      )
+    }
+
+    output$`__reactivedoc__` <- doc_ui
   }
 }
 
@@ -348,8 +348,8 @@ rmarkdown_shiny_ui <- function(dir, file) {
         tags$div(
           id = "rmd_loader_wrapper",
           tags$div(id = "rmd_loader", style = "display: none",
-                   tags$img(src = "rmd_resources/rmd_loader.gif"),
-                   tags$p("Loading")))),
+                   tags$p("Please wait..."),
+                   tags$img(src = "rmd_resources/rmd_loader.gif")))),
       shiny::uiOutput("__reactivedoc__")
     )
   }
@@ -386,7 +386,8 @@ shinyHTML_with_deps <- function(html_file, deps) {
 # given an input file and its encoding, return a list with values indicating
 # whether the input file's Shiny document can be cached and, if so, its cached
 # representation if available
-rmd_cached_output <- function (input, encoding) {
+#' @importFrom utils head
+rmd_cached_output <- function(input, encoding) {
   # init return values
   cacheable <- FALSE
   cached <- FALSE
@@ -413,7 +414,28 @@ rmd_cached_output <- function (input, encoding) {
     cacheable <- TRUE
     output_key <- digest::digest(paste(input, file.info(input)[4]),
                                  algo = "md5", serialize = FALSE)
-    output_dest <- paste(file.path(dirname(tempdir()), "rmarkdown", output_key,
+
+    basetmp <- tempdir()
+
+    # On some machines, the TMP directory is /tmp and shared by all users.
+    # Caching data under /tmp/rmarkdown would mean that multiple users
+    # would try to access that same folder, which probably has permissions
+    # 700 by default. So namespace by username.
+    username <- Sys.info()[c("effective_user", "user", "login")]
+    username <- ifelse(username != "unknown", username, NA_character_)
+    username <- na.omit(username)
+    username <- head(username, 1)
+    if (length(username) == 1) {
+      if (!grepl("^[a-z0-9\\-\\_]+$", username, perl = TRUE, ignore.case = TRUE)) {
+        # If the user has anything remotely suspicious in their username, use a
+        # digest of the username instead, to prevent any possibility of jumping
+        # outside of the temp directory.
+        username <- substr(digest::digest(username, "md5"), 1, 12)
+      }
+      basetmp <- file.path(dirname(tempdir()), username)
+    }
+
+    output_dest <- paste(file.path(basetmp, "rmarkdown", output_key,
                                    paste("rmd", output_key, sep = "_")),
                          "html", sep = ".")
 
@@ -429,7 +451,7 @@ rmd_cached_output <- function (input, encoding) {
     # file
     output_dest <- tempfile(fileext = ".html")
   }
-  list (
+  list(
     cacheable = cacheable,
     cached = cached,
     dest = output_dest,
@@ -449,7 +471,7 @@ resolve_relative <- function(dir, relpath) {
   if (nchar(abs.path) <= nchar(dir) + 1)
     return(NULL)
   if (substr(abs.path, 1, nchar(dir)) != dir ||
-        substr(abs.path, nchar(dir)+1, nchar(dir)+1) != '/') {
+        substr(abs.path, nchar(dir) + 1, nchar(dir) + 1) != '/') {
     return(NULL)
   }
   return(abs.path)
@@ -463,8 +485,8 @@ file.path.ci <- function(dir, name) {
   if (!dir_exists(dir))
     return(default)
 
-  matches <- list.files(dir, name, ignore.case=TRUE, full.names=TRUE,
-                        include.dirs=TRUE)
+  matches <- list.files(dir, name, ignore.case = TRUE, full.names = TRUE,
+                        include.dirs = TRUE)
   if (length(matches) == 0)
     return(default)
   return(matches[[1]])
@@ -475,17 +497,14 @@ file.path.ci <- function(dir, name) {
 #' In a Shiny document, evaluate the given expression after the document has
 #' finished rendering, instead of during render.
 #'
+#' This function is useful inside Shiny documents. It delays the
+#' evaluation of its argument until the document has finished its initial
+#' render, so that the document can be viewed before the calculation is
+#' finished.
+#'
+#' Any expression that returns HTML can be wrapped in \code{render_delayed}.
 #' @param expr The expression to evaluate.
-#'
 #' @return An object representing the expression.
-#'
-#' @details This function is useful inside Shiny documents. It delays the
-#'   evaluation of its argument until the document has finished its initial
-#'   render, so that the document can be viewed before the calculation is
-#'   finished.
-#'
-#'   Any expression that returns HTML can be wrapped in \code{render_delayed}.
-#'
 #' @note \code{expr} is evaluated in a \strong{copy} of the environment in which
 #'   the \code{render_delayed} call appears. Consequently, no side effects
 #'   created by \code{expr} are visible in succeeding expressions, nor are
@@ -493,10 +512,8 @@ file.path.ci <- function(dir, name) {
 #'   to \code{expr}.
 #'
 #'   \code{expr} must be an expression that produces HTML.
-#'
 #' @examples
 #' \dontrun{
-#'
 #' # Add the following code to an R Markdown document
 #'
 #' div(Sys.time())
@@ -508,9 +525,9 @@ file.path.ci <- function(dir, name) {
 #'
 #' div(Sys.time())
 #' }
-#'
 #' @export
 render_delayed <- function(expr) {
+
   # take a snapshot of the environment in which the expr should be rendered
   env <- parent.frame()
   env_snapshot <- new.env(parent = parent.env(env))
@@ -538,7 +555,7 @@ is_shiny <- function(runtime) {
   !is.null(runtime) && grepl('^shiny', runtime)
 }
 
-is_shiny_classic <-function(runtime) {
+is_shiny_classic <- function(runtime) {
   identical(runtime, "shiny")
 }
 
@@ -546,7 +563,9 @@ is_shiny_prerendered <- function(runtime) {
   identical(runtime, "shiny_prerendered")
 }
 
-write_shiny_deps <- function (files_dir, deps) {
+write_shiny_deps <- function(files_dir,
+                             deps) {
+
   if (!dir_exists(files_dir))
     dir.create(files_dir, recursive = TRUE)
   deps_file <- file.path(files_dir, "dependencies.json")
@@ -554,7 +573,7 @@ write_shiny_deps <- function (files_dir, deps) {
   writeLines(deps_json, deps_file, useBytes = TRUE)
 }
 
-read_shiny_deps <- function (files_dir) {
+read_shiny_deps <- function(files_dir) {
   deps_path <- file.path(files_dir, "dependencies.json")
   if (file.exists(deps_path)) {
     deps_json <- readLines(deps_path, encoding = 'UTF-8')
@@ -566,8 +585,7 @@ read_shiny_deps <- function (files_dir) {
 
     # return
     dependencies
-  }
-  else {
+  } else {
     list()
   }
 }

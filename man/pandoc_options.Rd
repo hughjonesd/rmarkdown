@@ -5,8 +5,8 @@
 \title{Pandoc options for an output format}
 \usage{
 pandoc_options(to, from = rmarkdown_format(), args = NULL,
-  keep_tex = FALSE, latex_engine = c("pdflatex", "lualatex", "xelatex"),
-  ext = NULL)
+  keep_tex = FALSE, latex_engine = c("pdflatex", "lualatex",
+  "xelatex"), ext = NULL)
 }
 \arguments{
 \item{to}{Pandoc format to convert to}
@@ -23,7 +23,7 @@ pandoc_options(to, from = rmarkdown_format(), args = NULL,
 
 \item{ext}{File extension (e.g. ".tex") for output file (if \code{NULL}
 chooses default based on \code{to}). This is typically used to force
-the final output of a latex or beamer converstion to be \code{.tex}
+the final output of a latex or beamer conversion to be \code{.tex}
 rather than \code{.pdf}.}
 }
 \value{
@@ -35,8 +35,8 @@ Define the pandoc options for an R Markdown output format.
 }
 \details{
 The \code{from} argument should be used very cautiously as it's
-  important for users to be able to rely on a stable definition of supported
-  markdown extensions.
+important for users to be able to rely on a stable definition of supported
+markdown extensions.
 }
 \seealso{
 \link{output_format}, \link{rmarkdown_format}

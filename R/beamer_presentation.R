@@ -2,10 +2,23 @@
 #'
 #' Format for converting from R Markdown to a Beamer presentation.
 #'
+#' See the \href{https://rmarkdown.rstudio.com/beamer_presentation_format.html}{online
+#' documentation} for additional details on using the \code{beamer_presentation}
+#' format.
+#'
+#' Creating Beamer output from R Markdown requires that LaTeX be installed.
+#'
+#' R Markdown documents can have optional metadata that is used to generate a
+#' document header that includes the title, author, and date. For more details
+#' see the documentation on R Markdown \link[=rmd_metadata]{metadata}.
+#'
+#' R Markdown documents also support citations. You can find more information on
+#' the markdown syntax for citations in the
+#' \href{https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
+#' and Citations} article in the online documentation.
 #' @inheritParams output_format
 #' @inheritParams pdf_document
 #' @inheritParams html_document
-#'
 #' @param toc \code{TRUE} to include a table of contents in the output (only
 #'   level 1 headers will be included in the table of contents).
 #' @param slide_level The heading level which defines individual slides. By
@@ -20,25 +33,10 @@
 #' @param theme Beamer theme (e.g. "AnnArbor").
 #' @param colortheme Beamer color theme (e.g. "dolphin").
 #' @param fonttheme Beamer font theme (e.g. "structurebold").
-#'
+#' @param self_contained Whether to generate a full LaTeX document (\code{TRUE})
+#'   or just the body of a LaTeX document (\code{FALSE}). Note the LaTeX
+#'   document is an intermediate file unless \code{keep_tex = TRUE}.
 #' @return R Markdown output format to pass to \code{\link{render}}
-#'
-#' @details
-#'
-#' See the \href{http://rmarkdown.rstudio.com/beamer_presentation_format.html}{online
-#' documentation} for additional details on using the \code{beamer_presentation} format.
-#'
-#' Creating Beamer output from R Markdown requires that LaTeX be installed.
-#'
-#' R Markdown documents can have optional metadata that is used to generate a
-#' document header that includes the title, author, and date. For more details
-#' see the documentation on R Markdown \link[=rmd_metadata]{metadata}.
-#'
-#' R Markdown documents also support citations. You can find more information on
-#' the markdown syntax for citations in the
-#' \href{http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
-#' and Citations} article in the online documentation.
-#'
 #' @examples
 #' \dontrun{
 #'
@@ -50,7 +48,6 @@
 #' # specify an option for incremental rendering
 #' render("pres.Rmd", beamer_presentation(incremental = TRUE))
 #' }
-#'
 #' @export
 beamer_presentation <- function(toc = FALSE,
                                 slide_level = NULL,
@@ -69,6 +66,7 @@ beamer_presentation <- function(toc = FALSE,
                                 keep_tex = FALSE,
                                 latex_engine = "pdflatex",
                                 citation_package = c("none", "natbib", "biblatex"),
+                                self_contained = TRUE,
                                 includes = NULL,
                                 md_extensions = NULL,
                                 pandoc_args = NULL) {
@@ -116,6 +114,9 @@ beamer_presentation <- function(toc = FALSE,
   citation_package <- match.arg(citation_package)
   if (citation_package != "none") args <- c(args, paste0("--", citation_package))
 
+  # generate a self-contained LaTeX document (including preamble)
+  if (self_contained) args <- c(args, "--self-contained")
+
   # content includes
   args <- c(args, includes_to_pandoc_args(includes))
 
@@ -125,6 +126,25 @@ beamer_presentation <- function(toc = FALSE,
   # custom args
   args <- c(args, pandoc_args)
 
+  # initialize saved files dir
+  saved_files_dir <- NULL
+
+  pre_processor <- function(metadata, input_file, runtime, knit_meta,
+                                files_dir, output_dir) {
+    # save files dir (for generating intermediates)
+    saved_files_dir <<- files_dir
+
+    # no-op other than caching dir location
+    invisible(NULL)
+  }
+
+  # generate intermediates (required to make resources available for publish)
+  intermediates_generator <- function(original_input, encoding,
+                                      intermediates_dir) {
+    return(pdf_intermediates_generator(saved_files_dir, original_input,
+                                        encoding, intermediates_dir))
+  }
+
   # return format
   output_format(
     knitr = knitr_options_pdf(fig_width, fig_height, fig_crop, dev),
@@ -133,6 +153,8 @@ beamer_presentation <- function(toc = FALSE,
                             args = args,
                             latex_engine = latex_engine,
                             keep_tex = keep_tex),
+    pre_processor = pre_processor,
+    intermediates_generator = intermediates_generator,
     clean_supporting = !keep_tex,
     df_print = df_print
   )
@@ -224,8 +246,5 @@ patch_beamer_template <- function() {
     return(NULL)
 
   # write and return path to template
-  tempfile <- tempfile(fileext = ".tex")
-  template <- paste(template, collapse = "\n")
-  writeLines(enc2utf8(template), tempfile, useBytes = TRUE)
-  tempfile
+  as_tmpfile(enc2utf8(template))
 }

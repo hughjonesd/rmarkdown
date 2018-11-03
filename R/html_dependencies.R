@@ -1,4 +1,6 @@
-#' @import htmltools
+#' @importFrom htmltools htmlDependency copyDependencyToDir
+#'   makeDependencyRelative renderDependencies tagList tags
+#'   restorePreserveChunks extractPreserveChunks HTML
 NULL
 
 #' Provide common HTML dependencies for R Markdown formats
@@ -10,55 +12,30 @@ NULL
 #' @name html-dependencies
 NULL
 
-# create an html dependency for our embedded jquery
-#' @rdname html-dependencies
+#' @importFrom htmldeps html_dependency_jquery
 #' @export
-html_dependency_jquery <- function()  {
-  htmlDependency(name = "jquery",
-                 version = "1.11.3",
-                 src = rmarkdown_system_file("rmd/h/jquery-1.11.3"),
-                 script = "jquery.min.js")
-}
+htmldeps::html_dependency_jquery
 
-# create an html dependency for our embedded bootstrap
-#' @rdname html-dependencies
+#' @importFrom htmldeps html_dependency_bootstrap
 #' @export
-html_dependency_bootstrap <- function(theme) {
-  if (identical(theme, "default")) theme <- "bootstrap"
-  htmlDependency(name = "bootstrap",
-                 version = "3.3.5",
-                 rmarkdown_system_file("rmd/h/bootstrap-3.3.5"),
-                 meta = list(viewport = "width=device-width, initial-scale=1"),
-                 script = c(
-                   "js/bootstrap.min.js",
-                   # These shims are necessary for IE 8 compatibility
-                   "shim/html5shiv.min.js",
-                   "shim/respond.min.js"
-                 ),
-                 stylesheet = paste("css/", theme, ".min.css", sep=""))
-}
+htmldeps::html_dependency_bootstrap
 
-# create an html_dependency for our embedded jqueryui
-#' @rdname html-dependencies
+#' @importFrom htmldeps html_dependency_jqueryui
 #' @export
-html_dependency_jqueryui <- function() {
-  htmlDependency(name = 'jqueryui',
-                 version = '1.11.4',
-                 src = rmarkdown_system_file("rmd/h/jqueryui-1.11.4"),
-                 script = 'jquery-ui.min.js'
-  )
-}
+htmldeps::html_dependency_jqueryui
 
-# create an html_dependency for tocify
-#' @rdname html-dependencies
+#' @importFrom htmldeps html_dependency_tocify
 #' @export
-html_dependency_tocify <- function() {
-  htmlDependency(name = "tocify",
-                 version = "1.9.1",
-                 src = rmarkdown_system_file("rmd/h/tocify-1.9.1"),
-                 script = "jquery.tocify.js",
-                 stylesheet = "jquery.tocify.css")
-}
+htmldeps::html_dependency_tocify
+
+#' @importFrom htmldeps html_dependency_font_awesome
+#' @export
+htmldeps::html_dependency_font_awesome
+
+#' @importFrom htmldeps html_dependency_ionicons
+#' @export
+htmldeps::html_dependency_ionicons
+
 
 html_dependency_navigation <- function(code_menu, source_embed) {
 
@@ -67,37 +44,12 @@ html_dependency_navigation <- function(code_menu, source_embed) {
   if (code_menu)
     script <- c(script, "codefolding.js")
   if (source_embed)
-    script <- c(script, "FileSaver.min.js", "sourceembed.js")
+    script <- c(script, "sourceembed.js")
 
   htmlDependency(name = "navigation",
                  version = "1.1",
                  src = rmarkdown_system_file("rmd/h/navigation-1.1"),
                  script = script)
-}
-
-
-# create an html_dependency for font awesome
-#' @rdname html-dependencies
-#' @export
-html_dependency_font_awesome <- function() {
-  htmlDependency(
-    "font-awesome",
-    "4.5.0",
-    src = rmarkdown_system_file("rmd/h/font-awesome-4.5.0"),
-    stylesheet = "css/font-awesome.min.css"
-  )
-}
-
-# create an html_dependency for ionicons
-#' @rdname html-dependencies
-#' @export
-html_dependency_ionicons <- function() {
-  htmlDependency(
-    "ionicons",
-    "2.0.1",
-    src = rmarkdown_system_file("rmd/h/ionicons-2.0.1"),
-    stylesheet = "css/ionicons.min.css"
-  )
 }
 
 # analyze navbar html source for icon dependencies
@@ -107,19 +59,18 @@ navbar_icon_dependencies <- function(navbar) {
   source <- readLines(navbar)
 
   # find icon references
-  res <- regexec('<span class="(fa fa|ion ion)-', source)
+  res <- regexec('<(span|i) +class *= *("|\') *(fa fa|ion ion)-', source)
   matches <- regmatches(source, res)
   libs <- c()
   for (match in matches) {
     if (length(match) > 0)
-      libs <- c(libs, match[[2]])
+      libs <- c(libs, match[[4]])
   }
   libs <- unique(libs)
 
   # return their dependencies
   html_dependencies_fonts("fa fa" %in% libs, "ion ion" %in% libs)
 }
-
 
 # utilty function to return a list of font dependencies based
 # whether we are including font_awesome and/or iconicons
@@ -131,7 +82,6 @@ html_dependencies_fonts <- function(font_awesome, ionicons) {
     deps <- append(deps, list(html_dependency_ionicons()))
   deps
 }
-
 
 # flattens an arbitrarily nested list and returns all of the dependency
 # objects it contains
@@ -166,7 +116,7 @@ html_dependency_resolver <- function(all_dependencies) {
   dependencies <- htmltools::resolveDependencies(all_dependencies)
 
   # validate each surviving dependency
-  lapply(dependencies, validate_html_dependency)
+  dependencies <- lapply(dependencies, validate_html_dependency)
 
   # return the consolidated dependencies
   dependencies
@@ -189,9 +139,9 @@ html_dependencies_as_string <- function(dependencies, lib_dir, output_dir) {
     dependencies <- lapply(dependencies, makeDependencyRelative, output_dir)
   }
   return(renderDependencies(dependencies, "file", encodeFunc = identity,
-    hrefFilter = function(path) {
-      html_reference_path(path, lib_dir, output_dir)
-    })
+                            hrefFilter = function(path) {
+                              html_reference_path(path, lib_dir, output_dir)
+                            })
   )
 }
 
@@ -212,15 +162,26 @@ validate_html_dependency <- function(list) {
     stop("name for html_dependency not provided", call. = FALSE)
   if (is.null(list$version))
     stop("version for html_dependency not provided", call. = FALSE)
+  list <- fix_html_dependency(list)
   if (is.null(list$src$file))
     stop("path for html_dependency not provided", call. = FALSE)
   file <- list$src$file
   if (!is.null(list$package))
     file <- system.file(file, package = list$package)
-  if (!file.exists(file))
+  if (!file.exists(file)) {
+    utils::str(list)
     stop("path for html_dependency not found: ", file, call. = FALSE)
+  }
 
   list
+}
+
+# monkey patch HTML dependencies; currently only supports highlight.js
+fix_html_dependency <- function(list) {
+  if (!identical(list$name, 'highlightjs') || !identical(list$version, '1.1'))
+    return(list)
+  if (!identical(list$src$file, '')) return(list)
+  html_dependency_highlightjs(gsub('[.]css$', '', list$stylesheet))
 }
 
 # check if the passed knit_meta has any (e.g. html/latex) dependencies
@@ -260,16 +221,14 @@ html_dependency_pagedtable <- function() {
   )
 }
 
-
-
-#' @param highlight Highligher to use
+#' @param highlight Highlighter to use
 #' @rdname html-dependencies
 #' @export
 html_dependency_highlightjs <- function(highlight) {
   htmlDependency(
     "highlightjs",
-    version = "1.1",
-    src = rmarkdown_system_file("rmd/h/highlightjs-1.1"),
+    version = "9.12.0",
+    src = rmarkdown_system_file("rmd/h/highlightjs"),
     script = "highlight.js",
     stylesheet = paste0(highlight, ".css")
   )

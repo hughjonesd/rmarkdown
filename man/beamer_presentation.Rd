@@ -4,13 +4,15 @@
 \alias{beamer_presentation}
 \title{Convert to a Beamer presentation}
 \usage{
-beamer_presentation(toc = FALSE, slide_level = NULL, incremental = FALSE,
-  fig_width = 10, fig_height = 7, fig_crop = TRUE, fig_caption = TRUE,
-  dev = "pdf", df_print = "default", theme = "default",
-  colortheme = "default", fonttheme = "default", highlight = "default",
-  template = "default", keep_tex = FALSE, latex_engine = "pdflatex",
-  citation_package = c("none", "natbib", "biblatex"), includes = NULL,
-  md_extensions = NULL, pandoc_args = NULL)
+beamer_presentation(toc = FALSE, slide_level = NULL,
+  incremental = FALSE, fig_width = 10, fig_height = 7,
+  fig_crop = TRUE, fig_caption = TRUE, dev = "pdf",
+  df_print = "default", theme = "default", colortheme = "default",
+  fonttheme = "default", highlight = "default", template = "default",
+  keep_tex = FALSE, latex_engine = "pdflatex",
+  citation_package = c("none", "natbib", "biblatex"),
+  self_contained = TRUE, includes = NULL, md_extensions = NULL,
+  pandoc_args = NULL)
 }
 \arguments{
 \item{toc}{\code{TRUE} to include a table of contents in the output (only
@@ -74,6 +76,10 @@ for details on creating custom templates.}
 \item{citation_package}{The LaTeX package to process citations, \code{natbib}
 or \code{biblatex}. Use \code{none} if neither package is to be used.}
 
+\item{self_contained}{Whether to generate a full LaTeX document (\code{TRUE})
+or just the body of a LaTeX document (\code{FALSE}). Note the LaTeX
+document is an intermediate file unless \code{keep_tex = TRUE}.}
+
 \item{includes}{Named list of additional content to include within the
 document (typically created using the \code{\link{includes}} function).}
 
@@ -90,8 +96,9 @@ R Markdown output format to pass to \code{\link{render}}
 Format for converting from R Markdown to a Beamer presentation.
 }
 \details{
-See the \href{http://rmarkdown.rstudio.com/beamer_presentation_format.html}{online
-documentation} for additional details on using the \code{beamer_presentation} format.
+See the \href{https://rmarkdown.rstudio.com/beamer_presentation_format.html}{online
+documentation} for additional details on using the \code{beamer_presentation}
+format.
 
 Creating Beamer output from R Markdown requires that LaTeX be installed.
 
@@ -101,7 +108,7 @@ see the documentation on R Markdown \link[=rmd_metadata]{metadata}.
 
 R Markdown documents also support citations. You can find more information on
 the markdown syntax for citations in the
-\href{http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
+\href{https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html}{Bibliographies
 and Citations} article in the online documentation.
 }
 \examples{
@@ -115,5 +122,4 @@ render("pres.Rmd", beamer_presentation())
 # specify an option for incremental rendering
 render("pres.Rmd", beamer_presentation(incremental = TRUE))
 }
-
 }

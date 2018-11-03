@@ -48,9 +48,9 @@ quotes to curly quotes, --- to em-dashes, -- to en-dashes, and ... to
 ellipses.}
 
 \item{theme}{Visual theme ("default", "cerulean", "journal", "flatly",
-"readable", "spacelab", "united", "cosmo", "lumen", "paper", "sandstone",
-"simplex", or "yeti"). Pass \code{NULL} for no theme (in this case you can
-use the \code{css} parameter to add your own styles).}
+"darkly", "readable", "spacelab", "united", "cosmo", "lumen", "paper",
+"sandstone", "simplex", or "yeti"). Pass \code{NULL} for no theme (in this
+case you can use the \code{css} parameter to add your own styles).}
 
 \item{highlight}{Syntax highlighting style. Supported styles include
 "default", "tango", "pygments", "kate", "monochrome", "espresso", "zenburn",
@@ -92,6 +92,7 @@ base R Markdown HTML output formatter \code{\link{html_document_base}}}
 Format for converting from R Markdown to an HTML notebook.
 }
 \details{
-For more details on the HTML file format produced by
- \code{html_notebook}, see \href{http://rmarkdown.rstudio.com/r_notebook_format.html}{http://rmarkdown.rstudio.com/r_notebook_format.html}.
+See the \href{https://rmarkdown.rstudio.com/r_notebook_format.html}{online
+documentation} for additional details on using the \code{html_notebook}
+format.
 }

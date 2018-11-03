@@ -6,8 +6,8 @@
 \usage{
 md_document(variant = "markdown_strict", preserve_yaml = FALSE,
   toc = FALSE, toc_depth = 3, fig_width = 7, fig_height = 5,
-  fig_retina = NULL, dev = "png", df_print = "default", includes = NULL,
-  md_extensions = NULL, pandoc_args = NULL)
+  fig_retina = NULL, dev = "png", df_print = "default",
+  includes = NULL, md_extensions = NULL, pandoc_args = NULL)
 }
 \arguments{
 \item{variant}{Markdown variant to produce (defaults to "markdown_strict").
@@ -77,12 +77,10 @@ and Citations} article in the online documentation.
 }
 \examples{
 \dontrun{
-
 library(rmarkdown)
 
 render("input.Rmd", md_document())
 
 render("input.Rmd", md_document(variant = "markdown_github"))
 }
-
 }

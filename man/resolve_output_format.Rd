@@ -4,8 +4,8 @@
 \alias{resolve_output_format}
 \title{Resolve the output format for an R Markdown document}
 \usage{
-resolve_output_format(input, output_format = NULL, output_options = NULL,
-  encoding = getOption("encoding"))
+resolve_output_format(input, output_format = NULL,
+  output_options = NULL, encoding = getOption("encoding"))
 }
 \arguments{
 \item{input}{Input file (Rmd or plain markdown)}
@@ -16,7 +16,7 @@ the default format for the input file).}
 \item{output_options}{List of output options that should override the
 options specified in metadata.}
 
-\item{encoding}{The encoding of the input file; see \code{\link{file}}}
+\item{encoding}{The encoding of the input file; see \code{\link{file}}.}
 }
 \value{
 An R Markdown output format definition that can be passed to

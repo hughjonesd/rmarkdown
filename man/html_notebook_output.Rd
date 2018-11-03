@@ -2,25 +2,22 @@
 % Please edit documentation in R/html_notebook_output.R
 \name{html_notebook_output}
 \alias{html_notebook_output}
-\alias{html_notebook_output}
 \alias{html_notebook_output_html}
-\alias{html_notebook_output}
 \alias{html_notebook_output_img}
-\alias{html_notebook_output}
 \alias{html_notebook_output_png}
-\alias{html_notebook_output}
 \alias{html_notebook_output_code}
 \title{Generate R Notebook Output}
 \usage{
 html_notebook_output_html(html, meta = NULL)
 
-html_notebook_output_img(path = NULL, bytes = NULL, attributes = NULL,
-  meta = NULL, format = c("png", "jpeg"))
+html_notebook_output_img(path = NULL, bytes = NULL,
+  attributes = NULL, meta = NULL, format = c("png", "jpeg"))
 
-html_notebook_output_png(path = NULL, bytes = NULL, attributes = NULL,
-  meta = NULL, format = c("png", "jpeg"))
+html_notebook_output_png(path = NULL, bytes = NULL,
+  attributes = NULL, meta = NULL, format = c("png", "jpeg"))
 
-html_notebook_output_code(code, attributes = list(class = "r"), meta = NULL)
+html_notebook_output_code(code, attributes = list(class = "r"),
+  meta = NULL)
 }
 \arguments{
 \item{html}{Arbitrary HTML content to insert.}
@@ -47,6 +44,7 @@ through the \code{output_source} function attached to a
 \code{\link{output_format}}.
 }
 \details{
-For more details on the HTML file format produced by
- \code{html_notebook}, see \href{http://rmarkdown.rstudio.com/r_notebook_format.html}{http://rmarkdown.rstudio.com/r_notebook_format.html}.
+See the \href{https://rmarkdown.rstudio.com/r_notebook_format.html}{online
+documentation} for additional details on using the \code{html_notebook}
+format.
 }
